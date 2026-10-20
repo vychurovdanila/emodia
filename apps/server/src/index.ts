@@ -12,5 +12,5 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`[emoza/server] listening on http://localhost:${PORT}`);
+  console.log(`[emodia/server] listening on http://localhost:${PORT}`);
 });

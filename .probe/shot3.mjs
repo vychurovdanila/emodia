@@ -160,7 +160,7 @@ await trySend('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoi
 
 await send('Page.navigate', { url: BASE });
 await sleep(3000);
-await evaluate(`localStorage.setItem('emoza:onboarding:home','1');localStorage.setItem('emoza:onboarding:focusShown','1');localStorage.setItem('emoza:onboarding:holdShown','1');'seeded'`);
+await evaluate(`localStorage.setItem('emodia:onboarding:home','1');localStorage.setItem('emodia:onboarding:focusShown','1');localStorage.setItem('emodia:onboarding:holdShown','1');'seeded'`);
 await send('Page.reload', { ignoreCache: false });
 await sleep(7000);
 

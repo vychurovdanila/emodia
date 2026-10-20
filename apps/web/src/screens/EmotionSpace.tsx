@@ -1,4 +1,4 @@
-import {
+﻿import {
   Application,
   Assets,
   BlurFilter,
@@ -11,7 +11,7 @@ import {
   type TextureSource,
 } from 'pixi.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EMOTIONS, EMOTION_TEXTS, type Emotion, type EmotionMotion } from '@emoza/shared';
+import { EMOTIONS, EMOTION_TEXTS, type Emotion, type EmotionMotion } from '@emodia/shared';
 
 import {
   DialogIcon,
@@ -30,14 +30,14 @@ const GRID_ROWS = 6;
  * REFERENCE.md §3.2 (на экране 390×844 это ≈23 px). Плотность ВНУТРИ
  * матрицы держат SPRITE_SIZE_RATIO и CELL_GAP_RATIO.
  */
-const EDGE_PADDING_RATIO = 0.06;
+const EDGE_PADDING_RATIO = 0.035;
 
 /**
  * Нижняя зона, которую матрица не занимает: высота bottom-nav (64px) плюс
  * воздух под последним рядом. Сетка вписывается в область над ней, поэтому
  * персонажи больше не упираются в иконки навигации.
  */
-const BOTTOM_NAV_HEIGHT = 64;
+const BOTTOM_NAV_HEIGHT = 68;
 const MATRIX_BOTTOM_MARGIN = 20;
 
 /** Зазор между персонажами внутри ячейки: 1% ячейки — они почти соприкасаются. */
@@ -69,7 +69,7 @@ const FOCUS_BLUR_STRENGTH = 6;
  * alpha 0.4 и мягкий блюр 6. Эмозик в руке яркий и резкий, а матрица
  * за ним читается как задний план и не отвлекает.
  */
-const WORLD_HOLD_ALPHA = 0.4;
+const WORLD_HOLD_ALPHA = 0.35;
 const WORLD_HOLD_BLUR = 6;
 
 /**
@@ -92,7 +92,7 @@ const CAROUSEL_Y_RATIO = 0.25;
  * как в референсе. При 0.45 и больше сосед уезжает за край экрана и
  * превращается в «цветное пятно» у бортика.
  */
-const CAROUSEL_SIDE_X_RATIO = 0.4;
+const CAROUSEL_SIDE_X_RATIO = 0.43;
 
 /** Центр ленты — крупный и резкий, соседи — тоже крупные, но в тумане.
  *  2.31 — это 2.2 + 5% (Проход 4): центр ещё чуть крупнее, соседи
@@ -106,7 +106,7 @@ const CAROUSEL_CENTER_SCALE = 2.19;
 const CAROUSEL_SIDE_SCALE = 0.98;
 
 /** Туман у края экрана: alpha 0.4 и мягкий блюр 8; в центре — 1 и 0. */
-const CAROUSEL_FOG_ALPHA = 0.4;
+const CAROUSEL_FOG_ALPHA = 0.35;
 const CAROUSEL_SIDE_BLUR = 8;
 
 /**
@@ -124,7 +124,7 @@ const CAROUSEL_SNAP_HALF_RATIO = 0.5;
  * Уверенный свайп: скорость пальца в px/мс — едем на одну страницу даже
  * без сноса. Ниже этого порога страницу решает только снос пальца.
  */
-const CAROUSEL_FLICK_VELOCITY = 0.5;
+const CAROUSEL_FLICK_VELOCITY = 0.6;
 
 /** Жест ленты: сдвиг и время, меньше которых это тап, а не пролистывание. */
 const CAROUSEL_DRAG_TAP_PX = 8;
@@ -135,10 +135,10 @@ const CAROUSEL_TAP_MS = 300;
  * пролистывает за один жест. Быстрый свайп — 5 персонажей, средний — 3,
  * уверенный — 1. Ниже порога решает только снос (см. releaseDrag).
  */
-const CAROUSEL_FLING_VELOCITY_MAX = 2.5;
-const CAROUSEL_FLING_PAGES_MAX = 5;
-const CAROUSEL_FLING_VELOCITY_MID = 1.5;
-const CAROUSEL_FLING_PAGES_MID = 3;
+const CAROUSEL_FLING_VELOCITY_MAX = 4.5;
+const CAROUSEL_FLING_PAGES_MAX = 3;
+const CAROUSEL_FLING_VELOCITY_MID = 2.6;
+const CAROUSEL_FLING_PAGES_MID = 2;
 
 /** Качество блюра соседей: фильтров три, поэтому качество ниже, чем у мира. */
 const CAROUSEL_BLUR_QUALITY = 3;
@@ -178,7 +178,7 @@ const SPRITE_COL_FLASH = 2;
  * заполняет свою ячейку (воздух даёт только CELL_GAP_RATIO), поэтому
  * матрица плотная: соседи почти соприкасаются.
  */
-const SPRITE_SIZE_RATIO = 1;
+const SPRITE_SIZE_RATIO = 1.05;
 
 /** Захват: сколько держать палец и насколько можно сдвинуться. */
 const HOLD_THRESHOLD = 300;
@@ -200,9 +200,9 @@ const HOLD_RETURN_LERP = 0.18;
 
 /**
  * Точка захвата: палец ложится НИЖЕ центра персонажа, поэтому шарик ведём
- * вверх на 20% его радиуса в руке — лицо остаётся видимым из-под пальца.
+ * вверх на 40% его радиуса в руке — лицо остаётся видимым из-под пальца.
  */
-const HOLD_FINGER_OFFSET_RATIO = 0.2;
+const HOLD_FINGER_OFFSET_RATIO = 0.4;
 
 /** Хит-ареа шарика = половина ячейки: соседние круги ровно соприкасаются. */
 const HIT_AREA_RATIO = 1;
@@ -212,9 +212,9 @@ const HIT_AREA_RATIO = 1;
  * home — первый заход на экран, focusShown — первое попадание в фокус,
  * holdShown — первый долгий захват.
  */
-const ONBOARDING_HOME_KEY = 'emoza:onboarding:home';
-const ONBOARDING_FOCUS_KEY = 'emoza:onboarding:focusShown';
-const ONBOARDING_HOLD_KEY = 'emoza:onboarding:holdShown';
+const ONBOARDING_HOME_KEY = 'emodia:onboarding:home';
+const ONBOARDING_FOCUS_KEY = 'emodia:onboarding:focusShown';
+const ONBOARDING_HOLD_KEY = 'emodia:onboarding:holdShown';
 const ONBOARDING_TIP_DURATION = 6000;
 
 /** Центральный шар поднимается в ленту таким, каким стоял в матрице. */

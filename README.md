@@ -17,7 +17,7 @@
 ## Структура
 
 ```
-emoza/
+emodia/
 ├── apps/
 │   ├── web/          # фронтенд (PWA)
 │   └── server/       # API-сервер
@@ -28,7 +28,7 @@ emoza/
 └── README.md
 ```
 
-Общий код подключается как workspace-пакет `@emoza/shared`.
+Общий код подключается как workspace-пакет `@emodia/shared`.
 
 ## Требования
 
