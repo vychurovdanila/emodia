@@ -466,12 +466,15 @@ function focusAnnotation(emotion: Emotion): string {
 }
 
 /**
- * Звук взятия шарика — пока заглушка: файлов /sounds ещё нет,
- * поэтому плеер молча ничего не играет и сцена работает дальше.
+ * Звук взятия шарика: для каждой эмоции есть два варианта (${id}-1.mp3,
+ * ${id}-2.mp3), играем случайный. Если файл не найден или плеер молчит,
+ * захват работает как обычно.
  */
 function playGrabSound(emotionId: string): void {
   try {
-    const audio = new Audio(`/sounds/${emotionId}.mp3`);
+    // Выбираем случайный вариант: 1 или 2
+    const variant = Math.random() > 0.5 ? '1' : '2';
+    const audio = new Audio(`/sounds/${emotionId}-${variant}.mp3`);
     audio.volume = 0.6;
     void audio.play().catch(() => {});
   } catch {
