@@ -389,11 +389,18 @@ interface CopySlot extends SlotBase {
 /** Слот ленты: центр или декоративная копия соседа. */
 type TapeSlot = BallSlot | CopySlot;
 
-/** Тройка ленты: prev слева, current в центре, next справа. */
+/** Семёрка ленты: prev/current/next — видимые на экране,
+ *  farPrev/midPrev — слева за границей, midNext/farNext — справа за границей.
+ *  Дополнительные слоты рендерятся для прелоада спрайтов: пользователь не
+ *  видит процесс загрузки текстуры при свайпе. */
 interface Carousel {
-  prev: CopySlot;
-  current: BallSlot;
-  next: CopySlot;
+  farPrev: CopySlot;   // -3 шага (прелоад, за экраном)
+  midPrev: CopySlot;   // -2 шага (прелоад, у края)
+  prev: CopySlot;      // -1 шаг (видимый левый)
+  current: BallSlot;   // 0 (центр)
+  next: CopySlot;      // +1 шаг (видимый правый)
+  midNext: CopySlot;   // +2 шага (прелоад, у края)
+  farNext: CopySlot;   // +3 шага (прелоад, за экраном)
 }
 
 /**
@@ -1021,9 +1028,11 @@ export function EmotionSpace() {
 
       /**
        * Куда слоту ехать и каким стать на месте x: в центре персонаж крупный
-       * и резкий, к краям тает в тумане. Место, размер, прозрачность и блюр
-       * сходятся к цели через approach в ticker — поэтому и получается
-       * «проявление из тумана», а не мгновенная подмена.
+       * и резкий, к краям тает в тумане. Функция ставит ТОЛЬКО цели. В
+       * режиме входа в фокус (layoutTape(false)) к целям ведёт approach в
+       * ticker — отсюда «проявление из тумана». В режиме следования
+       * (layoutTape(true)) placeSlotAt тут же переносит цели в текущие
+       * значения, чтобы лента за пальцем (и за snap) стояла ровно по месту.
        */
       /** Насколько сосед опущен: 12% его собственного размера на экране. */
       const sideYOffset = (slot: TapeSlot) =>
@@ -1044,15 +1053,23 @@ export function EmotionSpace() {
       };
 
       /**
-       * Лента едет за пальцем: место ставим напрямую, без инерции, иначе
-       * лента отстаёт от пальца. Размер и туман догоняют плавно (approach).
+       * Лента едет за пальцем: всё состояние ставим напрямую, без инерции —
+       * x, y, масштаб, туман и блюр определяются ТОЛЬКО позицией. Иначе
+       * размер догонял бы место с лагом (approach 15%/кадр): во время snap
+       * соседи выглядели бы «не на своём месте», а ПОСЛЕ коммита ещё
+       * полсекунды продолжали бы расти/ужиматься — эквивалент мигания.
+       * Позиция меняется плавно (snap или палец), значит плавно меняется
+       * и всё остальное; там, где лента остановилась, всё уже в финале.
        */
       const placeSlotAt = (slot: TapeSlot, x: number) => {
         aimSlotAt(slot, x);
         slot.x = x;
-        // Место ставим напрямую (без инерции), но соседи так же остаются
-        // ниже центра — иначе при перетаскивании они бы «подпрыгивали».
-        slot.y = (1 - centerProgress(x)) * sideYOffset(slot);
+        slot.y = slot.yTarget;
+        // Соседи так же остаются ниже центра — иначе при перетаскивании
+        // они бы «подпрыгивали» (y уже считается от centerProgress).
+        slot.scale = slot.scaleTarget;
+        slot.alpha = slot.alphaTarget;
+        slot.blurStrength = slot.blurTarget;
       };
 
       /**
@@ -1069,9 +1086,16 @@ export function EmotionSpace() {
         const step = sideStep();
         const place = follow ? placeSlotAt : aimSlotAt;
 
+        // Прелоад-слоты за границей экрана (невидимы для пользователя)
+        place(carousel.farPrev, -3 * step + offset);
+        place(carousel.midPrev, -2 * step + offset);
+        // Видимые на экране
         place(carousel.prev, -step + offset);
         place(carousel.current, offset);
         place(carousel.next, step + offset);
+        // Прелоад-слоты за границей экрана
+        place(carousel.midNext, 2 * step + offset);
+        place(carousel.farNext, 3 * step + offset);
       };
 
       /** Переносит текущие значения слота в его контейнер. */
@@ -1080,16 +1104,13 @@ export function EmotionSpace() {
         slot.container.scale.set(slot.scale);
         slot.container.alpha = slot.alpha;
 
-        // Блюр 0 — фильтр не нужен: снимаем его совсем, чтобы не платить
-        // за лишний проход рендера.
-        const wanted = slot.blurStrength > 0.01;
-
-        if (wanted && !slot.blurAttached) {
+        // Блюр прикрепляем один раз и больше не открепляем: повторное
+        // прикрепление при переходе от 0 к ненулевому значению вызывает
+        // скачок/мигание (фильтр меняет способ рендера контейнера).
+        // Нулевая сила — визуальный no-op.
+        if (!slot.blurAttached) {
           slot.container.filters = [slot.blur];
           slot.blurAttached = true;
-        } else if (!wanted && slot.blurAttached) {
-          slot.container.filters = [];
-          slot.blurAttached = false;
         }
 
         slot.blur.strength = slot.blurStrength;
@@ -1313,10 +1334,16 @@ export function EmotionSpace() {
         // в ленте вместо них — копии, которые проявляются из тумана.
         const step = sideStep();
         const current = attachFromMatrix(ball);
+        // Видимые слоты
         const prev = createCopy(neighbourBall(index, -1), -step);
         const next = createCopy(neighbourBall(index, 1), step);
+        // Прелоад-слоты за границами экрана (для плавного появления при свайпе)
+        const farPrev = createCopy(neighbourBall(index, -3), -3 * step);
+        const midPrev = createCopy(neighbourBall(index, -2), -2 * step);
+        const midNext = createCopy(neighbourBall(index, 2), 2 * step);
+        const farNext = createCopy(neighbourBall(index, 3), 3 * step);
 
-        carousel = { prev, current, next };
+        carousel = { farPrev, midPrev, prev, current, next, midNext, farNext };
         selectedBall = ball;
 
         // Пока центр не доехал из своей ячейки, лента заперта: палец подождёт.
@@ -1347,52 +1374,62 @@ export function EmotionSpace() {
         const arrivingSlot = direction === 1 ? tape.next : tape.prev;
         const farSlot = direction === 1 ? tape.prev : tape.next;
         const leaving = tape.current;
-        const step = sideStep();
 
-        // Пришедший сосед: настоящий шар занимает место копии один в один
-        // (размер, прозрачность и блюр копии становятся стартовыми).
-        const arriving = createSlot(arrivingSlot.ball, 0, 0, {
-          scale: arrivingSlot.scale,
-          alpha: arrivingSlot.alpha,
-          blur: arrivingSlot.blurStrength,
-        });
+        // Пришедший сосед: извлекаем НАСТОЯЩИЙ шар из матрицы. Стартовые
+        // значения — канон центра (2.19/1/0): к моменту коммита копия уже
+        // стояла на месте центра точно в этих значениях (placeSlotAt ведёт
+        // состояние по позиции), поэтому подмена «копия → оригинал» проходит
+        // без единого кадра скачка. Для быстрого пролистывания на несколько
+        // страниц это же значение правильное: роли переставляются мгновенно,
+        // и центру не нужно «вырастать» из бокового масштаба копии.
+        const arriving = createSlot(arrivingSlot.ball, 0, 0);
 
         const index = emotionIndex(arriving.ball.emotion.id);
 
-        // Прежний центр становится копией с той стороны, куда уехал.
-        const leavingCopy = createCopy(
-          leaving.ball,
-          direction === 1 ? -step : step,
-          {
-            scale: leaving.scale,
-            alpha: leaving.alpha,
-            blur: leaving.blurStrength,
-          },
-        );
+        // ── Переиспользуем arrivingSlot и farSlot (вместо destroyCopy + createCopy) ──
+        // Контейнеры не создаются и не уничтожаются — меняются только ссылка
+        // на шар и текстура. Масштаб/прозрачность/блюр каждой копии в тот же
+        // кадр проставит layoutTape через placeSlotAt: слоты живут ровно в
+        // состоянии своей позиции, поэтому сразу после коммита обе боковые
+        // копии УЖЕ в финале — нет никакой послемоментной пульсации размера.
+        // Размер спрайта копии синхронизируем с новым шаром (страховка).
 
-        // На дальнем конце рождается новая копия: она в тумане (alpha 0).
-        const bornCopy = createCopy(
-          neighbourBall(index, direction === 1 ? 1 : -1),
-          direction === 1 ? step : -step,
-        );
+        arrivingSlot.ball = leaving.ball;
+        arrivingSlot.sprite.texture = arrivingSlot.ball.frames[SPRITE_COL_IDLE];
+        syncCopySize(arrivingSlot);
+
+        // farSlot → новая копия на дальнем конце.
+        farSlot.ball = neighbourBall(index, direction === 1 ? 1 : -1);
+        farSlot.sprite.texture = farSlot.ball.frames[SPRITE_COL_IDLE];
+        syncCopySize(farSlot);
+
+        // ── Прелоад-слоты за экраном ──
+        const refreshCopyBall = (slot: CopySlot, rel: number) => {
+          slot.ball = neighbourBall(index, rel);
+          slot.sprite.texture = slot.ball.frames[SPRITE_COL_IDLE];
+          syncCopySize(slot);
+        };
+        refreshCopyBall(tape.farPrev, -3);
+        refreshCopyBall(tape.midPrev, -2);
+        refreshCopyBall(tape.midNext, 2);
+        refreshCopyBall(tape.farNext, 3);
+
+        // Прежний центр вернулся в матрицу.
+        returnSlotToWorld(leaving);
 
         carousel =
           direction === 1
-            ? { prev: leavingCopy, current: arriving, next: bornCopy }
-            : { prev: bornCopy, current: arriving, next: leavingCopy };
+            ? { farPrev: tape.farPrev, midPrev: tape.midPrev, prev: arrivingSlot, current: arriving, next: farSlot, midNext: tape.midNext, farNext: tape.farNext }
+            : { farPrev: tape.farPrev, midPrev: tape.midPrev, prev: farSlot, current: arriving, next: arrivingSlot, midNext: tape.midNext, farNext: tape.farNext };
         selectedBall = arriving.ball;
-        activeSlots = [carousel.prev, carousel.current, carousel.next];
-
-        // Старые слоты больше не нужны: копии — декорации, а шар встаёт дома.
-        destroyCopy(arrivingSlot);
-        destroyCopy(farSlot);
-        returnSlotToWorld(leaving);
+        activeSlots = [
+          carousel.farPrev, carousel.midPrev,
+          carousel.prev, carousel.current, carousel.next,
+          carousel.midNext, carousel.farNext,
+        ];
 
         layoutTape(true);
 
-        // Центр ленты — уже новая эмоция: говорим об этом React прямо в этом
-        // кадре, поэтому название и панель обновляются мгновенно, а не
-        // через паузу после остановки ленты.
         focusCommitRef.current(arriving.ball.emotion.id);
       };
 
@@ -1763,8 +1800,13 @@ export function EmotionSpace() {
             }
 
             // Копии — декорации: возвращать в матрицу нечего, убираем.
+            // Уничтожаем все копии, включая прелоад-слоты за экраном.
+            destroyCopy(carousel.farPrev);
+            destroyCopy(carousel.midPrev);
             destroyCopy(carousel.prev);
             destroyCopy(carousel.next);
+            destroyCopy(carousel.midNext);
+            destroyCopy(carousel.farNext);
 
             carousel = null;
           }
