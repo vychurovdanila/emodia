@@ -20,152 +20,83 @@ import {
   MainColoredIcon,
   UserIcon,
 } from '../components/NavIcons';
+import { ChatWidget } from '../components/ChatWidget';
 
 /** Раскладка сетки: 3 колонки × 6 строк (18 эмоций). */
 const GRID_COLS = 3;
 const GRID_ROWS = 6;
 
-/**
- * Отступ от краёв канваса (доля от ширины/высоты экрана). Плотность ВНУТРИ
- * матрицы держат SPRITE_SIZE_RATIO и CELL_GAP_RATIO.
- */
 const EDGE_PADDING_RATIO = 0.035;
-
-/**
- * Нижняя зона, которую матрица не занимает: высота bottom-nav (68px) плюс
- * воздух под последним рядом. Сетка вписывается в область над ней, поэтому
- * персонажи больше не упираются в иконки навигации.
- */
 const BOTTOM_NAV_HEIGHT = 68;
 const MATRIX_BOTTOM_MARGIN = 20;
-
-/** Зазор между персонажами внутри ячейки: 2% ячейки — они почти соприкасаются. */
 const CELL_GAP_RATIO = 0.02;
-
-/** Радиус хит-ареа как доля от меньшей стороны ячейки: половина ячейки. */
 const RADIUS_RATIO = 0.5;
 
-/** Коэффициент инкрементальной интерполяции в ticker. */
 const TWEEN_LERP = 0.15;
-
-/** Порог «доехали»: ближе — присваиваем target напрямую. */
 const TWEEN_EPSILON = 0.01;
 
-/**
- * Мир в фокусе: сжимается ВОКРУГ СВОЕГО ЦЕНТРА, опускается вниз
- * и ПОЛНОСТЬЮ растворяется (alpha 0): за окном текста не остаётся 
- * даже намёка на матрицу.
- */
 const WORLD_FOCUS_SCALE = 0.55;
 const WORLD_FOCUS_ALPHA = 0;
 const WORLD_FOCUS_Y_RATIO = 0.55;
 const FOCUS_BLUR_STRENGTH = 6;
 
-/**
- * Мир при захвате: в отличие от фокуса, он остаётся ВИДИМЫМ фоном —
- * alpha 0.35 и мягкий блюр 6. Эмозик в руке яркий и резкий.
- */
 const WORLD_HOLD_ALPHA = 0.35;
 const WORLD_HOLD_BLUR = 6;
 
-/**
- * Лента фокуса: отдельный слой ПОВЕРХ мира. Центр слоя — верхняя четверть экрана.
- * Из матрицы вынимается ТОЛЬКО центральный шар: пустует одна ячейка.
- * Соседи — декоративные копии, их оригиналы продолжают стоять в матрице.
- */
 const CAROUSEL_Y_RATIO = 0.25;
-
-/**
- * Отступ соседей от центра ленты как доля ширины экрана. Он же — ШАГ ленты:
- * сосед проезжает ровно это расстояние, вставая в центр.
- */
 const CAROUSEL_SIDE_X_RATIO = 0.44;
-
-/** Центр ленты — крупный и резкий, соседи — тоже крупные, но в тумане. */
 const CAROUSEL_CENTER_SCALE = 2.0;
 const CAROUSEL_SIDE_SCALE = 0.90;
-
-/** Туман у края экрана: alpha 0.35 и мягкий блюр 8; в центре — 1 и 0. */
-const CAROUSEL_FOG_ALPHA = 0.35;
+const CAROUSEL_FOG_ALPHA = 0.15;
 const CAROUSEL_SIDE_BLUR = 8;
-
-/** Соседи стоят НИЖЕ центра на 25% своего размера: лента читается как глубина. */
 const CAROUSEL_SIDE_Y_RATIO = 0.25;
 
-/** Snap после отпускания: инерция, порог «доехали» и доля шага для сноса. */
 const CAROUSEL_SNAP_LERP = 0.18;
 const CAROUSEL_SNAP_EPSILON = 1;
 const CAROUSEL_SNAP_HALF_RATIO = 0.5;
-
-/** Уверенный свайп: скорость пальца в px/мс — едем на одну страницу. */
 const CAROUSEL_FLICK_VELOCITY = 0.6;
-
-/** Жест ленты: сдвиг и время, меньше которых это тап, а не пролистывание. */
 const CAROUSEL_DRAG_TAP_PX = 8;
 const CAROUSEL_TAP_MS = 300;
 
-/** Бросок ленты: пороги скорости пальца (px/мс) и сколько страниц пролистываем. */
 const CAROUSEL_FLING_VELOCITY_MAX = 4.5;
 const CAROUSEL_FLING_PAGES_MAX = 3;
 const CAROUSEL_FLING_VELOCITY_MID = 2.6;
 const CAROUSEL_FLING_PAGES_MID = 2;
 
-/** Качество блюра соседей. */
 const CAROUSEL_BLUR_QUALITY = 3;
-
-/** Качество блюра мира: высокое по умолчанию, низкое при падении FPS. */
 const BLUR_QUALITY_HIGH = 4;
 const BLUR_QUALITY_LOW = 2;
 const LOW_FPS_THRESHOLD = 50;
 
-/**
- * Персонажи лежат в 6 файлах — по 3 эмоции в каждом. Внутри файла сетка 3×3.
- * Индекс эмоции: файл = floor(index / 3), строка = index % 3.
- */
 const SPRITES_PER_FILE = 3;
 const TOTAL_SPRITES = 6;
 
-/** 
- * Телефон определяем по вьюпорту: узкому экрану хватает лёгкой версии 
- * спрайтов — кадр 250 px вместо 500. 
- */
 const isMobile = window.matchMedia('(max-width: 768px)').matches || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 const SPRITE_FRAME_SIZE = isMobile ? 250 : 500;
 
-/** Колонки листа: 0 — покой, 1 — живое шевеление, 2 — вспышка. */
 const SPRITE_COLUMNS = [0, 1, 2];
 const SPRITE_COL_IDLE = 0;
 const SPRITE_COL_MOVE = 1;
 const SPRITE_COL_FLASH = 2;
 
-/** Размер персонажа в матрице: 1.05 позволяет заполнить ячейку. */
 const SPRITE_SIZE_RATIO = 1.0;
 
-/** Захват: сколько держать палец и насколько можно сдвинуться. */
 const HOLD_THRESHOLD = 300;
 const MOVE_THRESHOLD = 10;
-
-/** Шарик в руке: крупнее фокусного, так как он «главнее». */
 const BALL_HOLD_SCALE = 3.5;
 
-/** Интерполяция шарика: слежение за пальцем, рост и возврат домой. */
 const HOLD_FOLLOW_LERP = 0.35;
 const HOLD_SCALE_LERP = 0.2;
 const HOLD_RETURN_LERP = 0.18;
 
-/** Точка захвата: палец ложится НИЖЕ центра, шарик ведём вверх на 40% радиуса. */
 const HOLD_FINGER_OFFSET_RATIO = 0.4;
-
-/** Хит-ареа шарика = половина ячейки. */
 const HIT_AREA_RATIO = 1;
 
-/** Онбординг: три независимых флага. */
 const ONBOARDING_HOME_KEY = 'emodia:onboarding:home';
 const ONBOARDING_FOCUS_KEY = 'emodia:onboarding:focusShown';
 const ONBOARDING_HOLD_KEY = 'emodia:onboarding:holdShown';
 const ONBOARDING_TIP_DURATION = 6000;
 
-/** Центральный шар поднимается в ленту таким, каким стоял в матрице. */
 const CAROUSEL_RISING_LOOK: SlotLook = { scale: 1, alpha: 1, blur: 0 };
 
 interface MotionParams {
@@ -326,20 +257,12 @@ function markOnboardingFlag(key: string): void {
   try { localStorage.setItem(key, '1'); } catch { /* ignore */ }
 }
 
-/**
- * Ставит pivot в ЦЕНТР МИРА и центрирует мир на экране.
- * Без этого мир при фокусе сжимался бы к верхнему левому углу сетки.
- */
 function centerWorld(app: Application, world: Container): void {
   const bounds = world.getLocalBounds();
   world.pivot.set((bounds.minX + bounds.maxX) / 2, (bounds.minY + bounds.maxY) / 2);
   world.position.set(app.screen.width / 2, app.screen.height / 2);
 }
 
-/**
- * Пересчитывает геометрию шариков под текущий размер канваса.
- * Координаты считаются ОТНОСИТЕЛЬНО ЦЕНТРА МИРА (0,0 = центр экрана).
- */
 function layoutBalls(app: Application, balls: Ball[], matrix: Container): void {
   const paddingX = app.screen.width * EDGE_PADDING_RATIO;
   const paddingY = app.screen.height * EDGE_PADDING_RATIO;
@@ -374,7 +297,6 @@ function layoutBalls(app: Application, balls: Ball[], matrix: Container): void {
   }
 }
 
-/** Создаёт шарик эмоции: плоский круг и хит-ареа. */
 function createBall(emotion: Emotion, frames: [Texture, Texture, Texture], handlers: BallHandlers): Ball {
   const hitArea = new Circle(0, 0, 1);
   const container = new Container();
@@ -454,9 +376,6 @@ const DAILY_NOTES = [
 
 export function EmotionSpace() {
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // === ЗАЩИТА ОТ СТРОГОГО РЕЖИМА (STRICTMODE) ===
-  // Храним экземпляр приложения, чтобы убивать его при повторном рендере
   const appRef = useRef<Application | null>(null);
 
   const onBallClickRef = useRef<(id: string | null) => void>(() => {});
@@ -473,6 +392,11 @@ export function EmotionSpace() {
   const focusedIdRef = useRef<string | null>(null);
   const heldIdRef = useRef<string | null>(null);
 
+  // Состояния для чата
+  const [isChatMode, setIsChatMode] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [chatHistories, setChatHistories] = useState<Record<string, { role: 'user' | 'emotion'; text: string }[]>>({});
+
   const [sceneReady, setSceneReady] = useState(false);
   const [showHomeIntro, setShowHomeIntro] = useState(false);
   const [showFocusTip, setShowFocusTip] = useState(false);
@@ -481,6 +405,7 @@ export function EmotionSpace() {
   const handleBallClick = useCallback((id: string | null) => {
     if (carouselBusyRef.current || heldIdRef.current) return;
     setFocusedId((current) => (id === null ? null : current === id ? null : id));
+    if (id === null) setIsChatMode(false); // При выходе на главный сбрасываем чат
   }, []);
 
   const handleHoldStart = useCallback((id: string) => setHeldId(id), []);
@@ -490,6 +415,27 @@ export function EmotionSpace() {
     focusedIdRef.current = id;
     setFocusedId(id);
   }, []);
+
+  // Логика отправки сообщения эмоции
+  const handleSendMessage = (text: string) => {
+    if (!focusedId) return;
+    const currentHistory = chatHistories[focusedId] || [];
+    const updatedHistory = [...currentHistory, { role: 'user' as const, text }];
+    
+    setChatHistories(prev => ({ ...prev, [focusedId]: updatedHistory }));
+    setIsTyping(true);
+
+    setTimeout(() => {
+      setIsTyping(false);
+      setChatHistories(prev => ({
+        ...prev,
+        [focusedId]: [
+          ...updatedHistory, 
+          { role: 'emotion', text: 'Эй, ты чего там - уснул? Я ждать не привык!!!' } // Заглушка
+        ]
+      }));
+    }, 1500);
+  };
 
   useEffect(() => { onBallClickRef.current = handleBallClick; }, [handleBallClick]);
   useEffect(() => { onHoldStartRef.current = handleHoldStart; }, [handleHoldStart]);
@@ -534,14 +480,12 @@ export function EmotionSpace() {
     let resizeObserver: ResizeObserver | null = null;
 
     const setup = async () => {
-      // Если приложение уже было создано (HMR или StrictMode) — убиваем его
       if (appRef.current) {
         appRef.current.destroy(true, { children: true });
         appRef.current = null;
       }
       containerEl.innerHTML = '';
 
-      // 1. Сначала грузим быстрые мобильные спрайты (250x250) для мгновенного старта
       const spriteSources: TextureSource[] = [];
       for (let i = 1; i <= TOTAL_SPRITES; i++) {
         const texture = await Assets.load<Texture>(`/emotions/mobile/sprites-${i}.png`);
@@ -554,7 +498,7 @@ export function EmotionSpace() {
       await pixiApp.init({
         width: containerEl.clientWidth,
         height: containerEl.clientHeight,
-        background: 0xf5f0e8,
+        background: 0xf2efe9,
         antialias: true,
         resolution: Math.min(window.devicePixelRatio || 1, 2),
         autoDensity: true,
@@ -586,16 +530,10 @@ export function EmotionSpace() {
         const rowInFile = index % SPRITES_PER_FILE;
         const source = spriteSources[fileIdx];
         
-        // Нарезаем мобильные фреймы (250px)
         const frames = SPRITE_COLUMNS.map(
           (col) => new Texture({
             source,
-            frame: new Rectangle(
-              col * SPRITE_FRAME_SIZE,
-              rowInFile * SPRITE_FRAME_SIZE,
-              SPRITE_FRAME_SIZE,
-              SPRITE_FRAME_SIZE
-            ),
+            frame: new Rectangle(col * SPRITE_FRAME_SIZE, rowInFile * SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE),
           })
         ) as [Texture, Texture, Texture];
 
@@ -608,17 +546,14 @@ export function EmotionSpace() {
         return ball;
       });
 
-      // 2. Фоновая подгрузка HD спрайтов (500x500)
       const loadHDSprites = async () => {
         try {
           const hdSources: TextureSource[] = [];
           for (let i = 1; i <= TOTAL_SPRITES; i++) {
-            // Грузим из папки desktop (HD версия)
             const texture = await Assets.load<Texture>(`/emotions/desktop/sprites-${i}.png`);
             hdSources.push(texture.source);
           }
 
-          // ЯВНО УКАЗЫВАЕМ РАЗМЕР КАДРА ДЛЯ HD (500px)
           const HD_FRAME_SIZE = 500;
 
           balls.forEach((ball, index) => {
@@ -629,19 +564,13 @@ export function EmotionSpace() {
             const hdFrames = SPRITE_COLUMNS.map(
               (col) => new Texture({
                 source,
-                frame: new Rectangle(
-                  col * HD_FRAME_SIZE,
-                  rowInFile * HD_FRAME_SIZE,
-                  HD_FRAME_SIZE,
-                  HD_FRAME_SIZE
-                ),
+                frame: new Rectangle(col * HD_FRAME_SIZE, rowInFile * HD_FRAME_SIZE, HD_FRAME_SIZE, HD_FRAME_SIZE),
               })
             ) as [Texture, Texture, Texture];
 
             ball.frames = hdFrames;
             
             if (!ball.holdActivated && !ball.returning) {
-              // СОХРАНЯЕМ ТЕКУЩИЙ РАЗМЕР, ЧТОБЫ ШАР НЕ УВЕЛИЧИЛСЯ
               const currentWidth = ball.sprite.width;
               const currentHeight = ball.sprite.height;
               
@@ -656,7 +585,6 @@ export function EmotionSpace() {
         }
       };
 
-      // Запускаем фоновую загрузку, не блокируя основной поток
       void loadHDSprites();
 
       layoutBalls(pixiApp, balls, world);
@@ -891,7 +819,6 @@ export function EmotionSpace() {
         const arriving = createSlot(arrivingSlot.ball, 0, 0);
         const index = emotionIndex(arriving.ball.emotion.id);
 
-        // Переиспользуем контейнеры вместо их удаления и создания новых
         arrivingSlot.ball = leaving.ball;
         arrivingSlot.sprite.texture = arrivingSlot.ball.frames[SPRITE_COL_IDLE];
         syncCopySize(arrivingSlot);
@@ -910,7 +837,6 @@ export function EmotionSpace() {
         refreshCopyBall(tape.midNext, 2);
         refreshCopyBall(tape.farNext, 3);
 
-        // Возвращаем покинувший центр шар в матрицу
         returnSlotToWorld(leaving);
 
         carousel = direction === 1
@@ -1222,14 +1148,12 @@ export function EmotionSpace() {
       pixiApp.ticker.add(() => {
         const now = performance.now();
         
-        // Детект долгого нажатия для захвата
         for (const ball of balls) {
           if (ball.pressActive && !ball.holdActivated && !ball.pressMoved && now - ball.pressStartTime > HOLD_THRESHOLD) {
             ball.holdActivated = activateHold(ball);
           }
         }
 
-        // Анимация Snap (доводка карусели)
         if (carouselMode === 'snapping') {
           const diff = targetCarouselOffset - carouselOffset;
           carouselOffset += diff * CAROUSEL_SNAP_LERP;
@@ -1253,10 +1177,8 @@ export function EmotionSpace() {
           }
         }
 
-        // Отрисовка карусели
         if (carousel) layoutTape(!tapeEntering);
 
-        // Ведение шарика пальцем
         if (heldBall) {
           heldBall.container.x += (heldBall.targetX - heldBall.container.x) * HOLD_FOLLOW_LERP;
           heldBall.container.y += (heldBall.targetY - heldBall.container.y) * HOLD_FOLLOW_LERP;
@@ -1264,7 +1186,6 @@ export function EmotionSpace() {
           heldBall.container.scale.set(heldScale + (heldBall.targetScale - heldScale) * HOLD_SCALE_LERP);
         }
 
-        // Возврат шарика в матрицу
         for (const ball of balls) {
           if (!ball.returning) continue;
           ball.container.x += (ball.returnTargetX - ball.container.x) * HOLD_RETURN_LERP;
@@ -1280,7 +1201,6 @@ export function EmotionSpace() {
           }
         }
 
-        // Живая анимация лиц (покой/движение/вспышка)
         for (const ball of balls) {
           if (ball.holdActivated || ball.returning) continue;
           const p = ball.params;
@@ -1308,7 +1228,6 @@ export function EmotionSpace() {
           }
         }
 
-        // Интерполяция мира (приближение/отдаление при фокусе)
         tween.worldScale = approach(tween.worldScale, tween.worldScaleTarget);
         tween.worldAlpha = approach(tween.worldAlpha, tween.worldAlphaTarget);
         tween.worldY = approach(tween.worldY, tween.worldYTarget);
@@ -1319,7 +1238,6 @@ export function EmotionSpace() {
         world.position.set(pixiApp.screen.width / 2, tween.worldY);
         worldBlur.strength = tween.blur;
 
-        // Плавное движение слотов карусели
         for (const slot of activeSlots) {
           if (slot.kind === 'ball' && slot.ball.container.parent !== carouselLayer) continue;
 
@@ -1331,13 +1249,11 @@ export function EmotionSpace() {
           drawSlot(slot);
         }
 
-        // Разблокировка карусели после завершения анимации входа
         if (tapeEntering && activeSlots.every(slotArrived)) {
           tapeEntering = false;
           carouselBusyRef.current = false;
         }
 
-        // Оптимизация FPS (снижение качества блюра)
         fpsFrames += 1;
         if (now - fpsWindowStart >= 1000) {
           const fps = (fpsFrames * 1000) / (now - fpsWindowStart);
@@ -1367,7 +1283,6 @@ export function EmotionSpace() {
         resizeObserver = null;
       }
       
-      // === ГАРАНТИРОВАННАЯ ОЧИСТКА ===
       if (appRef.current) {
         appRef.current.destroy(true, { children: true });
         appRef.current = null;
@@ -1380,6 +1295,10 @@ export function EmotionSpace() {
 
   useEffect(() => {
     applyFocusRef.current(focusedId);
+    // Если ушли из фокуса, сбрасываем режим чата
+    if (focusedId === null) {
+      setIsChatMode(false);
+    }
   }, [focusedId]);
 
   useEffect(() => {
@@ -1439,49 +1358,49 @@ export function EmotionSpace() {
         </div>
       )}
 
-      {focusedEmotion && (
+      {/* ЗАГОЛОВОК ЭМОЦИИ */}
+      {focusedEmotion && !heldId && (
         <div className="focus-header">
-          <div className="focus-header__title">{focusedEmotion.name}</div>
-          <div className="focus-header__annotation">
-            {heldEmotion
-              ? focusAnnotation(focusedEmotion)
-              : focusedEmotion.annotation}
-          </div>
+          <div className="focus-header__title">{focusedEmotion.name.toUpperCase()}</div>
+          <div className="focus-header__annotation">{focusAnnotation(focusedEmotion)}</div>
         </div>
       )}
 
+      {/* ЗАГОЛОВОК ПРИ УДЕРЖАНИИ */}
       {heldEmotion && (
         <div className="hold-header">
-          <div className="hold-header__name">
-            {heldEmotion.name.toUpperCase()}
-          </div>
+          <div className="hold-header__name">{heldEmotion.name.toUpperCase()}</div>
           <div className="hold-header__hint">{heldHint(heldEmotion)}</div>
         </div>
       )}
 
-      {focusedId && (
+            {/* ПАНЕЛЬ С ЧАТОМ / ТЕКСТОМ */}
+      {focusedId && !heldId && (
         <div className="emotion-panel">
-          <div className="emotion-panel__card">
-            <div className="emotion-panel__text">
-              {(EMOTION_TEXTS[focusedEmotion?.id ?? ''] || 'Текст скоро появится...')
-                .split('\n')
-                .map((paragraph, i) => (
-                  <p key={i} style={{ marginBottom: '16px' }}>
-                    {paragraph}
-                  </p>
-                ))}
+          {isChatMode ? (
+            // В режиме чата — убираем обертку .emotion-panel__card
+            <div className="chat-container">
+              <ChatWidget
+                emotion={focusedEmotion!}
+                messages={chatHistories[focusedId] || []}
+                onSendMessage={handleSendMessage}
+                isTyping={isTyping}
+              />
             </div>
-          </div>
-
-          <div className="input-hint">
-            Напишите что нибудь, задай свой вопрос или запиши мне короткий
-            войс — зажми этот экран пальцем. Еще ты можешь взять эмоцию
-            (зажми пальцем), если ощущаешь ее сейчас, проговорить ее и
-            отпустить…
-          </div>
+          ) : (
+            // В режиме истории — карточка с текстом, все углы скруглены
+            <div className="emotion-panel__card">
+              <div className="emotion-panel__text">
+                {(EMOTION_TEXTS[focusedId] || 'Текст скоро появится...').split('\n').map((p, i) => (
+                  <p key={i} style={{ marginBottom: '16px' }}>{p}</p>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
+      {/* ПАНЕЛЬ ЗАПИСИ ГОЛОСА ПРИ УДЕРЖАНИИ */}
       {heldId && (
         <div className="recording-panel">
           <div className="recording-panel__wave">
@@ -1496,6 +1415,7 @@ export function EmotionSpace() {
         </div>
       )}
 
+      {/* НИЖНЯЯ НАВИГАЦИЯ */}
       <nav className="bottom-nav">
         <button
           type="button"
@@ -1508,6 +1428,7 @@ export function EmotionSpace() {
             if (focusedIdRef.current) applyFocusRef.current(null);
             setFocusedId(null);
             setHeldId(null);
+            setIsChatMode(false);
           }}
         >
           {navMainColor ? (
@@ -1517,8 +1438,28 @@ export function EmotionSpace() {
           )}
         </button>
 
-        <button type="button" className="nav-icon" data-icon="dialog" aria-label="Разговоры">
-          <DialogIcon />
+                        <button 
+          type="button" 
+          className="nav-icon" 
+          onClick={() => {
+            if (focusedEmotion) setIsChatMode(!isChatMode);
+          }}
+        >
+          {focusedEmotion ? (
+            isChatMode ? (
+              // В режиме чата — иконка книжки (story)
+              <img 
+                src="/story.svg" 
+                alt="История" 
+                style={{ width: 26, height: 26, opacity: 0.6, filter: `drop-shadow(0px 1000px 0 ${focusedEmotion.color})`, transform: 'translateY(-1000px)' }} 
+              />
+            ) : (
+              // В режиме истории — иконка диалога (используем DialogIcon, который мы уже сделали цветным)
+              <DialogIcon style={{ width: 26, height: 26, color: focusedEmotion.color, opacity: 0.6 }} />
+            )
+          ) : (
+            <DialogIcon style={{ width: 26, height: 26 }} />
+          )}
         </button>
 
         <button type="button" className="nav-icon" data-icon="explore" aria-label="Исследовать">

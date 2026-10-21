@@ -26,9 +26,7 @@ body,
   overflow: hidden;
 }
 
-/* Ежедневная заметка вверху главного экрана: цитата или новость Эмодиа.
-   Показываем только когда нет ни фокуса, ни захвата — в этих состояниях
-   её место занимает заголовок эмоции. Вход — fadeInPlain 0.4s без сдвига. */
+/* Ежедневная заметка вверху главного экрана */
 .daily-note {
   position: absolute;
   top: 3%;
@@ -44,10 +42,7 @@ body,
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* Шапка имени эмоции и аннотации под ним (REFERENCE §4.1). Она ОДНА и для
-   фокуса, и для захвата: при захвате текст выглядит точно так же, как в
-   фокусе, поэтому общие классы и общие правила. Как в герой.jpg — заголовок
-   жирный, буквы заглавные, аннотация прямая (не курсив). */
+/* Шапка имени эмоции и аннотации */
 .focus-header,
 .hold-header {
   position: absolute;
@@ -61,7 +56,6 @@ body,
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* Имя эмоции: 32px/700, буквы заглавные — эталон для фокуса и захвата. */
 .focus-header__title,
 .hold-header__name {
   color: #1a1a1a;
@@ -71,11 +65,6 @@ body,
   text-transform: uppercase;
 }
 
-/* Подпись под заголовком: в фокусе — краткое описание эмоции, при захвате —
-   совет («проговори и отпусти»). Меняется ТЕКСТ, а стиль ОДИН и тот же:
-   обычный (не курсив), 15px, вес 400 и margin-top -3px от заголовка —
-   подпись стоит вплотную к нему (было 2px, поднята на 5px вверх). Поэтому
-   правило общее для шапки фокуса и шапки захвата. */
 .focus-header__annotation,
 .hold-header__hint {
   margin-top: -3px;
@@ -97,7 +86,6 @@ body,
   }
 }
 
-/* Вход окна с текстом об эмоции (REFERENCE §7: translateY 20px → 0). */
 @keyframes slideUpPanel {
   from {
     opacity: 0;
@@ -109,42 +97,7 @@ body,
   }
 }
 
-.close-button {
-  position: absolute;
-  top: 3%;
-  right: 5%;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  color: #1a1a1a;
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.close-button:hover {
-  background: rgba(0, 0, 0, 0.12);
-}
-
-/* Окно с текстом об эмоции и плашка ввода под ним — как в герой.jpg.
-   .emotion-panel — невидимый контейнер во всю ширину: он держит геометрию
-   и, как раньше, перехватывает касания, чтобы тап по панели не уходил
-   в canvas.
-   top 36%, а не 55% (было 42% в Проходах 2–4): окно поднято ещё выше —
-   персонаж в фокусе стоит крупным в верхней четверти экрана, а весь низ
-   отдан тексту, поэтому окно стало заметно выше по высоте. Плата за это:
-   между персонажем и окном остаётся ≈20px (замер 390×844).
-   space-between прижимает карточку окна к верху, а плашку ввода — к низу
-   панели. Низ плашки опущен: отступ над safe-area 60px вместо 81px.
-   gap 7px — жёсткий отступ между окном и плашкой (Проход 5): отступы самих
-   блоков обнулены (margin-bottom/margin-top = 0), поэтому зазор ровно 7px. */
+/* Окно с текстом об эмоции */
 .emotion-panel {
   position: absolute;
   top: 36%;
@@ -155,7 +108,6 @@ body,
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 7px;
   align-items: center;
   padding: 0 22px calc(env(safe-area-inset-bottom, 0px) + 60px);
@@ -164,23 +116,9 @@ body,
   line-height: 1.6;
 }
 
-/* Светлая карточка окна: --panel-bg, тонкая граница и мягкая тень (§1).
-   flex: 1 1 340px — окно хочет быть 340px (Проход 4; было 280px), но умеет
-   уступать на низком экране и расти на высоком.
-   Жёсткий min-height здесь не годится: замер в браузере (390×844,
-   safe-area 34) показал, что стек «окно 340 + воздух 7 + плашка 129» =
-   497px не влезает в 395px между top 42% и отступом 60px — плашка ввода
-   уезжала на иконки навигации (низ плашки 807 при верхе nav 780).
-   С flex-basis окно забирает всё свободное место: 238px на 390×844 (там
-   340px всё равно ужимаются в свободные 238px), больше — на высоких
-   экранах, меньше — на низких.
-   padding-bottom 88px — полка под Play-кнопку: она вынута из потока
-   (position: absolute от этой карточки), поэтому текст под неё не заезжает,
-   а кнопка не скроллится вместе с текстом.
-   Скроллбар скрыт: окно читается как лист бумаги, а не как скроллер.
-   Углы: три по 24px, левый-нижний — 5px, как у сообщения в чате. */
+/* Светлая карточка окна (Режим истории) */
 .emotion-panel__card {
-  flex: 1 1 340px;
+  flex: 1;
   width: 100%;
   max-width: 560px;
   min-height: 0;
@@ -189,13 +127,10 @@ body,
   position: relative;
   display: flex;
   flex-direction: column;
-  border-radius: 24px 24px 24px 5px;
+  border-radius: 24px 24px 24px 24px;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-  /* Вертикальных отступов нет: их несёт .emotion-panel__text (padding 20px 0),
-     иначе маска затухания встаёт по кромкам текстового блока, а не окна.
-     Полка под Play-кнопку (88px) убрана вместе с самой кнопкой. */
   padding: 0 22px;
   overflow-y: auto;
   scrollbar-width: none;
@@ -203,12 +138,10 @@ body,
   animation: slideUpPanel 0.4s ease-out;
 }
 
-/* В webkit скроллбар прячется только так — scrollbar-width его не берёт. */
 .emotion-panel__card::-webkit-scrollbar {
   display: none;
 }
 
-/* Текст об эмоции: обычный, не курсив; серый, «шёпотом» (REFERENCE §2). */
 .emotion-panel__placeholder,
 .emotion-panel__text {
   flex: 1;
@@ -218,11 +151,6 @@ body,
   line-height: 1.65;
 }
 
-/* Мягкое затухание текста у верхней и нижней кромки окна (Проход 6): маска
-   живёт на тексте, а не на карточке — иначе прозрачными становились и
-   границы окна. padding 20px 0 — текст не обрезается маской. min-height: 0 и
-   скролл здесь же: затухание остаётся у кромок при прокрутке, а не уезжает
-   вместе с текстом. */
 .emotion-panel__text {
   padding: 20px 0;
   min-height: 0;
@@ -237,65 +165,7 @@ body,
   display: none;
 }
 
-/* ▶ внизу окна: 52×52 по §8, сам треугольник — 34×34.
-   Кнопка вынута из потока текста: absolute в карточке (её якорь —
-   position: relative у .emotion-panel__card) и приклеена к её низу через
-   bottom 18px, поэтому текст скроллится, а кнопка остаётся на месте. */
-.emotion-panel__play {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 52px;
-  height: 52px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: rgba(26, 26, 26, 0.35);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.emotion-panel__play svg {
-  width: 34px;
-  height: 34px;
-  display: block;
-}
-
-/* Плашка ввода под окном: --panel-bg-strong (§1), текст — точь-в-точь
-   из референса, поэтому шрифт обычный, не курсив (§2).
-   margin-top 0 — воздух между окном и плашкой задаёт gap: 7px у .emotion-panel;
-   углы зеркальны карточке
-   окна (три по 24px, острый 5px), но острый угол у плашки — правый-нижний
-   (Проход 4), поэтому две поверхности читаются как пара сообщений в чате. */
-.input-hint {
-  width: 100%;
-  max-width: 560px;
-  margin-top: 0;
-  font-size: 13.5px;
-  font-weight: 400;
-  color: rgba(26, 26, 26, 0.6);
-  line-height: 1.5;
-  background: rgba(255, 255, 255, 0.78);
-  border-radius: 24px 24px 5px 24px;
-  padding: 14px 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-}
-
-/* ─── Захват шарика пальцем ─── */
-
-/* Верхний оверлей захвата: имя эмоции и подсказка. Текст лежит прямо
-   на светлом canvas, поэтому он тёмный.
-   Сами стили — выше, в общем блоке с шапкой фокуса (.focus-header,
-   .hold-header, .hold-header__name, .hold-header__hint): при захвате шапка
-   выглядит ТОЧНО как в фокусе, отдельные правила ей не нужны. */
-
-/* Нижняя панель записи: белая карточка поверх тёмного canvas. Стоит выше
-   нижних иконок (bottom-nav 64px, иконки внутри), чтобы их не перекрывать:
-   bottom 12% (Проход 4; было 18%) — это ≈101px от низа на 390×844, панель
-   опустилась ближе к иконкам. */
+/* Панель записи */
 .recording-panel {
   position: absolute;
   bottom: 12%;
@@ -331,79 +201,22 @@ body,
   animation: wavePulse 0.9s ease-in-out infinite;
 }
 
-/* fadeIn сдвигает по X (он для по центру заголовков) — здесь нужен
-   просто плавный вход без сдвига. */
 @keyframes fadeInPlain {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes wavePulse {
-  0%,
-  100% {
-    height: 10px;
-    opacity: 0.4;
-  }
-  50% {
-    height: 32px;
-    opacity: 1;
-  }
+  0%, 100% { height: 10px; opacity: 0.4; }
+  50% { height: 32px; opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* ─── Стрелки пролистывания в фокусе ─── */
-
-.nav-arrow {
-  position: absolute;
-  top: 22%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  color: #1a1a1a;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: background 0.2s;
-  padding: 0;
-}
-
-.nav-arrow:hover {
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.nav-arrow--left {
-  left: 4%;
-}
-
-.nav-arrow--right {
-  right: 4%;
-}
-
-/* ─── Онбординг: карточки шагов 1 и 3, плашка шага 2 ─── */
-
+/* ─── Онбординг ─── */
 .onboarding-overlay {
   position: fixed;
   inset: 0;
@@ -475,18 +288,11 @@ body,
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* Подсказка висит ровно над окном текста: оно стоит на top 36%, поэтому
-   плашку поднимаем на её собственную высоту плюс 10px зазора (top берём из
-   того же ориентира, что и у .emotion-panel — иначе она ляжет поверх окна;
-   в базовом .onboarding-tip top не задан). */
 .onboarding-tip--focus {
   top: 36%;
   transform: translate(-50%, calc(-100% - 10px));
 }
 
-/* Онбординг 3 (первый захват): карточка по центру экрана без кнопки.
-   Палец держит шарик, поэтому оверлей не ловит события и не размывает
-   фон: иначе отпускание не дошло бы до сцены, а шарик был бы мутным. */
 .onboarding-overlay--hold {
   background: rgba(245, 240, 232, 0.35);
   backdrop-filter: none;
@@ -499,10 +305,7 @@ body,
   margin-bottom: 0;
 }
 
-/* ─── Нижняя навигация: четыре SVG из docs/design/icons ─── */
-
-/* Полностью прозрачная полоса: ни подложки, ни блюра, ни линии сверху
-   (REFERENCE §3.3). */
+/* ─── Нижняя навигация ─── */
 .bottom-nav {
   position: absolute;
   bottom: 0;
@@ -518,9 +321,6 @@ body,
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-/* Кнопка раздела: размер иконки 26×26, серость неактивных — #8B8178,
-   который SVG берут через currentColor. Цвета состояний main живут
-   внутри самих SVG (main-active / main-colored). */
 .nav-icon {
   background: none;
   border: none;
@@ -537,4 +337,124 @@ body,
   width: 26px;
   height: 26px;
   display: block;
+}
+
+/* --- СТИЛИ ДЛЯ ЧАТА --- */
+
+/* Кнопка-триггер (если используется) */
+.chat-trigger {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 12px 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: rgba(26, 26, 26, 0.8);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  z-index: 15;
+}
+
+/* Окно в режиме чата */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 560px;
+  flex: 1;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chat-messages::-webkit-scrollbar {
+  display: none;
+}
+
+.chat-bubble {
+  max-width: 90%;
+  padding: 14px 18px;
+  border-radius: 28px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+/* Сообщения от эмоции */
+/* Сообщения от эмоции */
+.chat-bubble--emotion {
+  align-self: flex-start;
+  /* Берем переменную цвета эмоции, делаем её прозрачной на 80% (оставляем 20%) */
+  background-color: color-mix(in srgb, var(--emotion-color) 20%, transparent);
+  color: #1a1a1a; /* Текст оставляем темным для читаемости */
+  border-top-left-radius: 4px;
+}
+
+/* Сообщения от пользователя */
+.chat-bubble--user {
+  align-self: flex-end;
+  background: #ffffff;
+  color: #1a1a1a;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border-bottom-right-radius: 4px;
+}
+
+.chat-typing {
+  color: rgba(26, 26, 26, 0.4);
+  font-size: 14px;
+  margin-top: 4px;
+  margin-left: 4px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Поле ввода */
+.chat-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  margin: 12px 0 0 0;
+  padding: 8px 16px;
+  border-radius: 28px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.chat-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: #1a1a1a;
+  padding: 8px 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.chat-input::placeholder {
+  color: rgba(26, 26, 26, 0.3);
+}
+
+.chat-send-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.chat-send-btn:disabled {
+  cursor: default;
 }

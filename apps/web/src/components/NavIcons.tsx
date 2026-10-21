@@ -97,15 +97,15 @@ export function DialogIcon(props: SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 141 140" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
       <path
         d="M12 80V60C12 33.4903 33.4903 12 60 12H81C107.51 12 129 33.4903 129 60V128H60V140H131L131.515 139.987C136.628 139.728 140.728 135.628 140.987 130.515L141 130V60C141 26.8629 114.137 6.76473e-07 81 0H60L59.2246 0.00488281C26.4449 0.420037 3.19655e-07 27.1218 0 60V80C0 112.878 26.4449 139.58 59.2246 139.995L60 140V128C33.4903 128 12 106.51 12 80Z"
-        fill="#918D83"
+        fill="currentColor"
       />
       <path
         d="M99 52C102.314 52 105 54.6863 105 58C105 61.3137 102.314 64 99 64H43C39.6863 64 37 61.3137 37 58C37 54.6863 39.6863 52 43 52H99Z"
-        fill="#918D83"
+        fill="currentColor"
       />
       <path
         d="M99 76C102.314 76 105 78.6863 105 82C105 85.3137 102.314 88 99 88H43C39.6863 88 37 85.3137 37 82C37 78.6863 39.6863 76 43 76H99Z"
-        fill="#918D83"
+        fill="currentColor"
       />
     </svg>
   );
@@ -199,6 +199,30 @@ export function UserActiveIcon(props: SVGProps<SVGSVGElement>) {
         d="M44 41C44 26.6406 55.6406 15 70 15C84.3594 15 96 26.6406 96 41C96 55.3594 84.3594 67 70 67V82C92.6437 82 111 63.6437 111 41C111 18.3563 92.6437 0 70 0C47.3563 0 29 18.3563 29 41C29 63.6437 47.3563 82 70 82V67C55.6406 67 44 55.3594 44 41Z"
         fill="#656255"
       />
+    </svg>
+  );
+}
+
+import React from 'react';
+
+// ... твои существующие иконки (MainActiveIcon, DialogIcon и т.д.) ...
+
+export function FlyIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <line x1="22" y1="2" x2="11" y2="13"></line>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+    </svg>
+  );
+}
+
+export function StoryIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+      <line x1="9" y1="7" x2="15" y2="7"></line>
+      <line x1="9" y1="11" x2="15" y2="11"></line>
     </svg>
   );
 }
