@@ -10,17 +10,20 @@
   type FederatedPointerEvent,
   type TextureSource,
 } from 'pixi.js';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { EMOTIONS, EMOTION_TEXTS, type Emotion, type EmotionMotion } from '@emodia/shared';
 
-import {
-  DialogIcon,
-  ExploreIcon,
-  MainActiveIcon,
-  MainColoredIcon,
-  UserIcon,
-} from '../components/NavIcons';
+import type { NavState } from '../components/BottomNav';
 import { ChatWidget } from '../components/ChatWidget';
+
+interface EmotionSpaceProps {
+  /** Отчёт о состоянии иконок нижней навигации (цвета, режим чата эмоции). */
+  onNavStateChange?: (state: NavState) => void;
+  /** Регистрация обработчика «сброса фокуса» для кнопки главной в нижней навигации. */
+  onRegisterMainReset?: (handler: () => void) => void;
+  /** Регистрация обработчика «открыть чат эмоции» для кнопки «Разговоры» при активном фокусе. */
+  onRegisterToggleEmotionChat?: (handler: () => void) => void;
+}
 
 /** Раскладка сетки: 3 колонки × 6 строк (18 эмоций). */
 const GRID_COLS = 3;
@@ -374,7 +377,7 @@ const DAILY_NOTES = [
   'Страх сторожит мост. Мимо можно пройти, если не бежать.',
 ];
 
-export function EmotionSpace() {
+export function EmotionSpace({ onNavStateChange, onRegisterMainReset, onRegisterToggleEmotionChat }: EmotionSpaceProps = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
 
@@ -1311,6 +1314,43 @@ export function EmotionSpace() {
   const heldEmotion = heldId ? (EMOTIONS.find((emotion) => emotion.id === heldId) ?? null) : null;
   const navMainColor = (heldEmotion ?? focusedEmotion)?.color;
 
+  // Нижняя навигация живёт на уровне App — сообщаем ей актуальное состояние иконок
+  // (цвет эмоции для главной/диалога и режим чата → иконка «истории»).
+  useLayoutEffect(() => {
+    onNavStateChange?.({
+      mainColor: navMainColor,
+      dialogColor: focusedEmotion?.color,
+      showStory: isChatMode,
+    });
+    return () => onNavStateChange?.({ showStory: false });
+  }, [onNavStateChange, navMainColor, focusedEmotion, isChatMode]);
+
+  // Кнопка «главная» в nav: возврат к матрице без фокуса/захвата/чата.
+  const handleMainReset = useCallback(() => {
+    const held = heldIdRef.current;
+    if (held) holdReleaseRef.current(held);
+    if (focusedIdRef.current) applyFocusRef.current(null);
+    setFocusedId(null);
+    setHeldId(null);
+    setIsChatMode(false);
+  }, []);
+
+  useEffect(() => {
+    onRegisterMainReset?.(handleMainReset);
+    return () => onRegisterMainReset?.(() => {});
+  }, [onRegisterMainReset, handleMainReset]);
+
+  // Кнопка «Разговоры»: при активном фокусе эмоции переключает её чат туда-обратно
+  // (история эмоции ⇄ чат), без фокуса — переход к психологам.
+  const handleToggleEmotionChat = useCallback(() => {
+    if (focusedEmotion) setIsChatMode(prev => !prev);
+  }, [focusedEmotion]);
+
+  useEffect(() => {
+    onRegisterToggleEmotionChat?.(handleToggleEmotionChat);
+    return () => onRegisterToggleEmotionChat?.(() => {});
+  }, [onRegisterToggleEmotionChat, handleToggleEmotionChat]);
+
   return (
     <div className="emotion-space">
       <div ref={containerRef} id="pixi-container" />
@@ -1414,62 +1454,6 @@ export function EmotionSpace() {
           </div>
         </div>
       )}
-
-      {/* НИЖНЯЯ НАВИГАЦИЯ */}
-      <nav className="bottom-nav">
-        <button
-          type="button"
-          className="nav-icon"
-          data-icon="main"
-          aria-label="Матрица эмоций"
-          onClick={() => {
-            const held = heldIdRef.current;
-            if (held) holdReleaseRef.current(held);
-            if (focusedIdRef.current) applyFocusRef.current(null);
-            setFocusedId(null);
-            setHeldId(null);
-            setIsChatMode(false);
-          }}
-        >
-          {navMainColor ? (
-            <MainColoredIcon style={{ color: navMainColor }} />
-          ) : (
-            <MainActiveIcon />
-          )}
-        </button>
-
-                        <button 
-          type="button" 
-          className="nav-icon" 
-          onClick={() => {
-            if (focusedEmotion) setIsChatMode(!isChatMode);
-          }}
-        >
-          {focusedEmotion ? (
-            isChatMode ? (
-              // В режиме чата — иконка книжки (story)
-              <img 
-                src="/story.svg" 
-                alt="История" 
-                style={{ width: 26, height: 26, opacity: 0.6, filter: `drop-shadow(0px 1000px 0 ${focusedEmotion.color})`, transform: 'translateY(-1000px)' }} 
-              />
-            ) : (
-              // В режиме истории — иконка диалога (используем DialogIcon, который мы уже сделали цветным)
-              <DialogIcon style={{ width: 26, height: 26, color: focusedEmotion.color, opacity: 0.6 }} />
-            )
-          ) : (
-            <DialogIcon style={{ width: 26, height: 26 }} />
-          )}
-        </button>
-
-        <button type="button" className="nav-icon" data-icon="explore" aria-label="Исследовать">
-          <ExploreIcon />
-        </button>
-
-        <button type="button" className="nav-icon" data-icon="user" aria-label="Профиль">
-          <UserIcon />
-        </button>
-      </nav>
     </div>
   );
 }
