@@ -6,9 +6,19 @@ interface ChatWidgetProps {
   messages: { role: 'user' | 'emotion'; text: string }[];
   onSendMessage: (text: string) => void;
   isTyping: boolean;
+  /** Приветствие в пустом чате. По умолчанию — текст от эмоции. */
+  greeting?: React.ReactNode;
 }
 
-export function ChatWidget({ emotion, messages, onSendMessage, isTyping }: ChatWidgetProps) {
+/** Приветствие по умолчанию — чат с эмоцией. */
+const DEFAULT_GREETING = (
+  <>
+    Привет, я твоя эмоция!<br /><br />
+    Напиши мне что нибудь текстом или запиши голосовое (зажми свое окно текста пальцем). Еще ты можешь взять меня, если ощущаешь прямо сейчас, проговорить и отпустить...
+  </>
+);
+
+export function ChatWidget({ emotion, messages, onSendMessage, isTyping, greeting }: ChatWidgetProps) {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -35,8 +45,7 @@ export function ChatWidget({ emotion, messages, onSendMessage, isTyping }: ChatW
         {/* Приветственное сообщение, если истории еще нет */}
         {messages.length === 0 && (
           <div className="chat-bubble chat-bubble--emotion">
-            Привет, я твоя эмоция!<br/><br/>
-            Напиши мне что нибудь текстом или запиши голосовое (зажми свое окно текста пальцем). Еще ты можешь взять меня, если ощущаешь прямо сейчас, проговорить и отпустить...
+            {greeting ?? DEFAULT_GREETING}
           </div>
         )}
         

@@ -1,8 +1,10 @@
 import {
+  DialogActiveIcon,
   DialogIcon,
   ExploreIcon,
   MainActiveIcon,
   MainColoredIcon,
+  MainIcon,
   UserIcon,
 } from './NavIcons';
 
@@ -45,7 +47,10 @@ export function BottomNav({
         aria-label="Матрица эмоций"
         onClick={onMainClick}
       >
-        {mainColor ? (
+        {activeTab === 'dialog' ? (
+          // На экране психолога — пассивная серая иконка
+          <MainIcon />
+        ) : mainColor ? (
           <MainColoredIcon style={{ color: mainColor }} />
         ) : (
           <MainActiveIcon />
@@ -59,7 +64,10 @@ export function BottomNav({
         aria-label="Разговоры"
         onClick={onDialogClick}
       >
-        {showStory ? (
+        {activeTab === 'dialog' ? (
+          // На экране психолога — активная иконка «Разговоры» в цвете психолога
+          <DialogActiveIcon style={{ width: 26, height: 26, color: dialogColor }} />
+        ) : showStory ? (
           // В режиме чата эмоции — иконка «истории»
           <img
             src="/story.svg"

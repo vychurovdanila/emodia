@@ -7,8 +7,6 @@ import type { Emotion } from '@emodia/shared';
 interface PsychologistSpaceProps {
   /** id психолога из PSYCHOLOGISTS, который открыт по умолчанию. */
   initialPsychologistId?: string;
-  /** Возврат к матрице эмоций (кнопка «назад»). */
-  onGoBack?: () => void;
   /** Отчёт о состоянии иконок нижней навигации (цвет текущего психолога). */
   onNavStateChange?: (state: NavState) => void;
 }
@@ -19,7 +17,7 @@ type ChatMessage = { role: 'user' | 'emotion'; text: string };
 /** Минимальная горизонтальная дистанция свайпа по портрету (пиксели). */
 const SWIPE_THRESHOLD = 50;
 
-export function PsychologistSpace({ initialPsychologistId, onGoBack, onNavStateChange }: PsychologistSpaceProps) {
+export function PsychologistSpace({ initialPsychologistId, onNavStateChange }: PsychologistSpaceProps) {
   // Чей портрет/чат показан сейчас; по умолчанию — психолог из пропса.
   const [activeId, setActiveId] = useState(initialPsychologistId || PSYCHOLOGISTS[0].id);
   // Независимые истории: сообщения каждого психолога хранятся под его id.
@@ -115,14 +113,6 @@ export function PsychologistSpace({ initialPsychologistId, onGoBack, onNavStateC
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <button
-          type="button"
-          className="psychologist-back-btn"
-          aria-label="Назад к эмоциям"
-          onClick={onGoBack}
-        >
-          ←
-        </button>
         <img src={psychologist.image} alt={psychologist.name} className="psychologist-avatar" />
       </div>
 
@@ -133,6 +123,15 @@ export function PsychologistSpace({ initialPsychologistId, onGoBack, onNavStateC
           messages={histories[activeId] || []}
           onSendMessage={handleSendMessage}
           isTyping={isTyping}
+          greeting={
+            <>
+              Привет, я {psychologist.name}.
+              <br />
+              <br />
+              Напиши мне, что тебя беспокоит, или запиши голосовое (зажми своё окно
+              текста пальцем). Я рядом и слушаю.
+            </>
+          }
         />
       </div>
     </div>

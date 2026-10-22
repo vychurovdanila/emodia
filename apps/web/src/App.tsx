@@ -56,10 +56,7 @@ export function App() {
           onRegisterToggleEmotionChat={handleRegisterToggleEmotionChat}
         />
       ) : (
-        <PsychologistSpace
-          onGoBack={() => setCurrentScreen('emotions')}
-          onNavStateChange={handleNavStateChange}
-        />
+        <PsychologistSpace onNavStateChange={handleNavStateChange} />
       )}
 
       {/* Нижняя навигация одна на всё приложение — закреплена и не перемонтируется */}
