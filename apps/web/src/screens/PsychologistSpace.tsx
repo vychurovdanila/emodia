@@ -16,7 +16,7 @@ interface PsychologistSpaceProps {
 type ChatMessage = { role: 'user' | 'emotion'; text: string };
 
 /** Минимальная горизонтальная дистанция свайпа по портрету (пиксели). */
-const SWIPE_THRESHOLD = 50;
+const SWIPE_THRESHOLD = 40;
 
 /** Матрица выбора психолога: 3 колонки × 4 строки (12 портретов). */
 const MATRIX_COLS = 3;
@@ -27,6 +27,21 @@ function matrixPosition(index: number): { row: number; col: number } {
   return { row: Math.floor(index / MATRIX_COLS) + 1, col: (index % MATRIX_COLS) + 1 };
 }
 
+/** Скорость «перелёта» портрета: тот же экспоненциальный лерп, что у твинов эмоций. */
+const FLIGHT_LERP = 0.25;
+/** Порог остановки перелёта (пиксели). */
+const FLIGHT_EPSILON = 0.5;
+
+/** Перелёт портрета: в свою ячейку матрицы (open) или обратно на место (close). */
+interface Flight {
+  phase: 'open' | 'close';
+  psychologistId: string;
+  image: string;
+  from: DOMRect;
+  /** Куда летим; для open вычисляется после отрисовки матрицы. */
+  to: DOMRect | null;
+}
+
 export function PsychologistSpace({ initialPsychologistId, onNavStateChange }: PsychologistSpaceProps) {
   // Чей портрет/чат показан сейчас; по умолчанию — психолог из пропса.
   const [activeId, setActiveId] = useState(initialPsychologistId || PSYCHOLOGISTS[0].id);
@@ -35,6 +50,17 @@ export function PsychologistSpace({ initialPsychologistId, onNavStateChange }: P
   const [isTyping, setIsTyping] = useState(false);
   // Открыта матрица выбора психолога (тап по портрету): чат скрыт, показана сетка.
   const [isMatrixOpen, setIsMatrixOpen] = useState(false);
+  // Идущий перелёт портрета (в ячейку матрицы или обратно).
+  const [flight, setFlight] = useState<Flight | null>(null);
+
+  /** Слой с «летящим» портретом и контейнер матрицы — нужны для замеров и анимации. */
+  const flightRef = useRef<HTMLDivElement | null>(null);
+  const matrixRef = useRef<HTMLDivElement | null>(null);
+  const portraitAreaRef = useRef<HTMLDivElement | null>(null);
+  /** Куда возвращаться: место большого портрета на экране психолога. */
+  const portraitRect = useRef<DOMRect | null>(null);
+  /** Высота вьюпорта при открытии матрицы: если изменилась (уехала клавиатура), место портрета другое. */
+  const portraitViewport = useRef<number | null>(null);
 
   // Точка начала касания — чтобы понять направление свайпа по портрету.
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -58,11 +84,118 @@ export function PsychologistSpace({ initialPsychologistId, onNavStateChange }: P
     setActiveId(PSYCHOLOGISTS[nextIndex].id);
   };
 
-  /** Выбор из матрицы: психолог занимает экран, матрица исчезает, возвращается чат. */
-  const handleSelectPsychologist = (id: string) => {
-    setActiveId(id);
-    setIsMatrixOpen(false);
+  /**
+   * Тап по портрету: он «летит» в свою ячейку матрицы (как шар эмоции в фокус),
+   * чат уступает место сетке.
+   */
+  const handlePortraitTap = () => {
+    if (flight) return;
+    const avatar = portraitAreaRef.current?.querySelector<HTMLImageElement>('.psychologist-avatar');
+    if (!avatar) return;
+
+    const from = avatar.getBoundingClientRect();
+    portraitRect.current = from;
+    portraitViewport.current = window.visualViewport?.height ?? window.innerHeight;
+    setFlight({ phase: 'open', psychologistId: psychologist.id, image: psychologist.image, from, to: null });
+    setIsMatrixOpen(true);
   };
+
+  /** Выбор из матрицы: портрет летит обратно на место, затем матрица исчезает и возвращается чат. */
+  const handleSelectPsychologist = (id: string) => {
+    if (flight) return;
+
+    const cellAvatar = matrixRef.current?.querySelector<HTMLImageElement>(
+      `[data-psychologist-id="${id}"] .psychologist-matrix__avatar`,
+    );
+    const to = portraitRect.current;
+    const selected = PSYCHOLOGISTS.find(item => item.id === id);
+    // Клавиатура закрылась вместе с чатом → большой портрет уже на другом месте: без анимации.
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const layoutMoved =
+      portraitViewport.current !== null && Math.abs(viewportHeight - portraitViewport.current) > 1;
+
+    // Без замеров (нечего анимировать) — переключаемся сразу.
+    if (!cellAvatar || !to || !selected || layoutMoved) {
+      setActiveId(id);
+      setIsMatrixOpen(false);
+      return;
+    }
+
+    setFlight({
+      phase: 'close',
+      psychologistId: id,
+      image: selected.image,
+      from: cellAvatar.getBoundingClientRect(),
+      to,
+    });
+  };
+
+  /**
+   * Перелёт портрета: экспоненциальный лерп 0.15 за кадр — та же скорость,
+   * что у твинов эмоций (TWEEN_LERP в EmotionSpace).
+   */
+  useLayoutEffect(() => {
+    if (!flight) return;
+
+    const layer = flightRef.current;
+    if (!layer) return;
+
+    const to =
+      flight.to ??
+      matrixRef.current
+        ?.querySelector<HTMLImageElement>(
+          `[data-psychologist-id="${flight.psychologistId}"] .psychologist-matrix__avatar`,
+        )
+        ?.getBoundingClientRect();
+
+    const finish = () => {
+      if (flight.phase === 'close') {
+        // Матрица закрывается только после «приземления» портрета.
+        setActiveId(flight.psychologistId);
+        setIsMatrixOpen(false);
+      }
+      setFlight(null);
+    };
+
+    if (!to) {
+      finish();
+      return;
+    }
+
+    let x = flight.from.left;
+    let y = flight.from.top;
+    let w = flight.from.width;
+    let h = flight.from.height;
+    let raf = 0;
+
+    const step = () => {
+      x += (to.left - x) * FLIGHT_LERP;
+      y += (to.top - y) * FLIGHT_LERP;
+      w += (to.width - w) * FLIGHT_LERP;
+      h += (to.height - h) * FLIGHT_LERP;
+
+      layer.style.left = `${x}px`;
+      layer.style.top = `${y}px`;
+      layer.style.width = `${w}px`;
+      layer.style.height = `${h}px`;
+
+      const arrived =
+        Math.abs(to.left - x) < FLIGHT_EPSILON &&
+        Math.abs(to.top - y) < FLIGHT_EPSILON &&
+        Math.abs(to.width - w) < FLIGHT_EPSILON &&
+        Math.abs(to.height - h) < FLIGHT_EPSILON;
+
+      if (arrived) {
+        finish();
+        return;
+      }
+
+      raf = requestAnimationFrame(step);
+    };
+
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [flight]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -122,23 +255,30 @@ export function PsychologistSpace({ initialPsychologistId, onNavStateChange }: P
     gridPosition: { row: 1, col: 1 },
   };
 
+  // Пока портрет летит, его «двойник» в ячейке скрыт: виден только летящий слой.
+  const flyingId = flight?.psychologistId ?? null;
+
   return (
     <div className="psychologist-space">
       {isMatrixOpen ? (
         /* Матрица выбора психолога: 3 × 4, у каждого своё место; чат скрыт */
         <div
-          className="psychologist-matrix"
+          ref={matrixRef}
+          className={`psychologist-matrix${flight?.phase === 'close' ? ' psychologist-matrix--leaving' : ''}`}
           role="listbox"
           aria-label={`Выбор психолога: ${MATRIX_COLS}×${MATRIX_ROWS}`}
         >
           {PSYCHOLOGISTS.map((item, index) => {
             const position = matrixPosition(index);
             const isActive = item.id === activeId;
+            const isFlying = flyingId === item.id;
             return (
               <button
                 key={item.id}
                 type="button"
-                className={`psychologist-matrix__cell${isActive ? ' psychologist-matrix__cell--active' : ''}`}
+                className={`psychologist-matrix__cell${isActive ? ' psychologist-matrix__cell--active' : ''}${
+                  isFlying ? ' psychologist-matrix__cell--flying' : ''
+                }`}
                 style={
                   {
                     gridColumn: position.col,
@@ -160,11 +300,12 @@ export function PsychologistSpace({ initialPsychologistId, onNavStateChange }: P
         <>
           {/* Верхняя часть: портрет; свайп переключает психолога, тап открывает матрицу */}
           <div
+            ref={portraitAreaRef}
             className="psychologist-portrait-area"
             style={{ touchAction: 'pan-y' }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
-            onClick={() => setIsMatrixOpen(true)}
+            onClick={handlePortraitTap}
           >
             <img src={psychologist.image} alt={psychologist.name} className="psychologist-avatar" />
           </div>
@@ -180,6 +321,22 @@ export function PsychologistSpace({ initialPsychologistId, onNavStateChange }: P
             />
           </div>
         </>
+      )}
+
+      {/* Летящий портрет: тот же кадр (cover + маска), что у ячейки и у большого портрета */}
+      {flight && (
+        <div
+          ref={flightRef}
+          className="psychologist-flight"
+          style={{
+            left: flight.from.left,
+            top: flight.from.top,
+            width: flight.from.width,
+            height: flight.from.height,
+          }}
+        >
+          <img className="psychologist-flight__img" src={flight.image} alt="" />
+        </div>
       )}
     </div>
   );

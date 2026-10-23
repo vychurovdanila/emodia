@@ -11,7 +11,7 @@
   type TextureSource,
 } from 'pixi.js';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { EMOTIONS, EMOTION_TEXTS, type Emotion, type EmotionMotion } from '@emodia/shared';
+import { EMOTIONS, EMOTION_TEXTS, EMOTION_GREETINGS, type Emotion, type EmotionMotion } from '@emodia/shared';
 
 import type { NavState } from '../components/BottomNav';
 import { ChatWidget } from '../components/ChatWidget';
@@ -35,7 +35,7 @@ const MATRIX_BOTTOM_MARGIN = 20;
 const CELL_GAP_RATIO = 0.02;
 const RADIUS_RATIO = 0.5;
 
-const TWEEN_LERP = 0.15;
+const TWEEN_LERP = 0.25;
 const TWEEN_EPSILON = 0.01;
 
 const WORLD_FOCUS_SCALE = 0.55;
@@ -240,7 +240,7 @@ function heldHint(emotion: Emotion): string {
 }
 
 function focusAnnotation(emotion: Emotion): string {
-  return heldHint(emotion).toLowerCase();
+  return emotion.annotation;
 }
 
 function playGrabSound(emotionId: string): void {
@@ -1425,6 +1425,7 @@ export function EmotionSpace({ onNavStateChange, onRegisterMainReset, onRegister
                 messages={chatHistories[focusedId] || []}
                 onSendMessage={handleSendMessage}
                 isTyping={isTyping}
+                greeting={EMOTION_GREETINGS[focusedId]}
               />
             </div>
           ) : (
