@@ -22,8 +22,10 @@ export function ChatWidget({ emotion, messages, onSendMessage, isTyping, greetin
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Автоскролл вниз при новых сообщениях
+  // Автоскролл вниз при новых сообщениях.
+  // На пустой истории не скроллим: длинное приветствие должно читаться с начала.
   useEffect(() => {
+    if (messages.length === 0 && !isTyping) return;
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 

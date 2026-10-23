@@ -80,7 +80,7 @@ const PROBE = `(() => {
     name: img ? img.alt : null,
     src: img ? img.getAttribute('src') : null,
     loaded: img ? img.complete && img.naturalWidth > 0 : false,
-    greeting: bubble ? (bubble.textContent || '').trim().slice(0, 40) : null,
+    greeting: bubble ? (bubble.textContent || '').trim() : null,
     navColor: icon ? getComputedStyle(icon).color : null,
   });
 })()`;
@@ -123,11 +123,13 @@ await sleep(1500);
 const seen = [];
 for (let i = 0; i < EXPECTED; i += 1) {
   const state = JSON.parse(await evaluate(PROBE));
-  const greetOk = Boolean(state.greeting && state.name && state.greeting.includes(state.name));
-  seen.push({ ...state, greetOk });
+  // Приветствие должно начинаться с «Привет, я <Имя>, <аннотация>…» и быть своим у каждого.
+  const greetOk = Boolean(state.greeting && state.name && state.greeting.startsWith(`Привет, я ${state.name},`));
+  const intro = state.greeting ? state.greeting.split('.')[0] + '.' : '';
+  seen.push({ ...state, greetOk, intro });
   console.log(
     `${String(i + 1).padStart(2, '0')}. ${String(state.name).padEnd(8)} portrait=${state.loaded ? 'OK  ' : 'FAIL'} ` +
-      `greeting=${greetOk ? 'OK' : 'FAIL'} color=${state.navColor} src=${state.src}`,
+      `greeting=${greetOk ? 'OK' : 'FAIL'} color=${state.navColor}\n     ${intro}`,
   );
   if (i === 0) await shot('0-first.png');
   if (i === 1) await shot('1-second.png');
@@ -140,9 +142,11 @@ for (let i = 0; i < EXPECTED; i += 1) {
 
 const names = seen.map((s) => s.name);
 const unique = new Set(names);
+const uniqueGreetings = new Set(seen.map((s) => s.intro));
 const broken = seen.filter((s) => !s.loaded || !s.greetOk);
 console.log('\n── ИТОГ ──');
 console.log(`уникальных психологов в обходе: ${unique.size} (ожидалось ${EXPECTED})`);
+console.log(`уникальных приветствий: ${uniqueGreetings.size} (ожидалось ${EXPECTED})`);
 console.log(`сломанных портретов/приветствий: ${broken.length}`);
 
 // Контрольный свайп с последнего — должен вернуться к первому (цикл).

@@ -13,6 +13,8 @@ export interface Psychologist {
   annotation: string;
   /** Подробное описание, чем может помочь. */
   description: string;
+  /** Уникальное приветствие в пустом чате: «Привет, я Лия, хранительница тела. Я …». */
+  greeting: string;
 }
 
 export const PSYCHOLOGISTS: Psychologist[] = [
@@ -23,14 +25,18 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/vera.png',
     annotation: 'Хранительница тепла',
     description: 'Материнская поддержка, работа с горем, потерями и самооценкой.',
+    greeting:
+      'Привет, я Вера, хранительница тепла. Я рядом, когда особенно тяжело: вместе пройдём через горе и потерю и потихоньку вернём веру в себя.',
   },
   {
     id: 'lina',
     name: 'Лина',
-    color: '#327440',
+    color: '#387344',
     image: '/psychologists/lina.png',
     annotation: 'Хранительница границ',
     description: 'Прямота и бережность. Работа с гневом, выгоранием и токсичными отношениями.',
+    greeting:
+      'Привет, я Лина, хранительница границ. Я помогу бережно, но прямо: про гнев и выгорание, про отношения, в которых теряешь себя.',
   },
   {
     id: 'nina',
@@ -39,6 +45,8 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/nina.png',
     annotation: 'Хранительница очага',
     description: 'Тепло с юмором. Темы родительства, семьи и баланса работы и жизни.',
+    greeting:
+      'Привет, я Нина, хранительница очага. У меня тепло и с юмором: про детей и семью, про то, как успевать всё и не забывать себя.',
   },
   {
     id: 'liya',
@@ -47,6 +55,8 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/liya.png',
     annotation: 'Хранительница тела',
     description: 'Мягкость и чувственность. Принятие телесности, близости и женственности.',
+    greeting:
+      'Привет, я Лия, хранительница тела. Я про мягкость и чувственность: про принятие себя, близость и свою женственность.',
   },
   {
     id: 'aya',
@@ -55,6 +65,8 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/aya.png',
     annotation: 'Цифровой друг',
     description: 'Современный подход. Тревога, FOMO, перфекционизм и жизнь в соцсетях.',
+    greeting:
+      'Привет, я Ая, цифровой друг. Разберёмся с тревогой, FOMO и перфекционизмом — и с тем, как жить в соцсетях и не сгорать.',
   },
   {
     id: 'yuna',
@@ -63,6 +75,8 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/yuna.png',
     annotation: 'Хранительница практик',
     description: 'Медитативный подход. Работа с паническими атаками и заземлением.',
+    greeting:
+      'Привет, я Юна, хранительница практик. Подышим вместе: помогу при панике и тревоге вернуться в тело и в момент «здесь и сейчас».',
   },
   {
     id: 'mark',
@@ -71,6 +85,8 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/mark.png',
     annotation: 'Философ-практик',
     description: 'Поиск смысла, кризисы середины жизни и экзистенциальные вопросы.',
+    greeting:
+      'Привет, я Марк, философ-практик. Поговорим о смысле, о кризисе середины жизни и о вопросах, на которые нет простых ответов.',
   },
   {
     id: 'maxim',
@@ -79,6 +95,8 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/maxim.png',
     annotation: 'Коуч-стратег',
     description: 'Структура и цели. Карьера, мотивация и преодоление прокрастинации.',
+    greeting:
+      'Привет, я Максим, коуч-стратег. Разложим всё по шагам: цели, карьера, мотивация и прокрастинация — без воды и давления.',
   },
   {
     id: 'daniil',
@@ -87,14 +105,18 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/daniil.png',
     annotation: 'Про близость',
     description: 'Честный разговор. Отношения, интимность, ревность и страхи.',
+    greeting:
+      'Привет, я Даниил, психолог про близость. Со мной можно честно: про отношения, интимность, ревность и страхи.',
   },
   {
     id: 'artem',
     name: 'Артём',
-    color: '#ed2229',
+    color: '#cd1d23',
     image: '/psychologists/artem.png',
     annotation: 'Про силу',
     description: 'Спокойная уверенность. Мужская уязвимость, гнев, отцовство и границы.',
+    greeting:
+      'Привет, я Артём, психолог про силу. Здесь можно быть уязвимым: про гнев, отцовство и границы — спокойно и без осуждения.',
   },
   {
     id: 'kirill',
@@ -103,6 +125,8 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/kirill.png',
     annotation: 'Свой парень',
     description: 'Неформальное общение. Одиночество и тревога у молодых людей.',
+    greeting:
+      'Привет, я Кирилл, свой парень. Без формальностей и умных слов: про одиночество, тревогу и то, что неловко говорить вслух.',
   },
   {
     id: 'ilya',
@@ -111,5 +135,7 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     image: '/psychologists/ilya.png',
     annotation: 'Старший друг',
     description: 'Надежная опора без морализаторства. Потери, кризисы, переходные периоды.',
+    greeting:
+      'Привет, я Илья, старший друг. Опора без морализаторства: потери, кризисы и переходные периоды проходим вместе.',
   },
 ];
