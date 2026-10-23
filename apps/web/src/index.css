@@ -54,23 +54,23 @@ body,
   right: 0;
   text-align: center;
   z-index: 10;
-  animation: fadeInPlain 0.3s ease-out;
+  animation: fadeInPlain 0.2s ease-out;
   pointer-events: none;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
 .focus-header__title,
 .hold-header__name {
-  color: #1a1a1a;
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  color: #060606a9;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
 }
 
 .focus-header__annotation,
 .hold-header__hint {
-  margin-top: -3px;
+  margin-top: -5px;
   font-size: 15px;
   font-weight: 400;
   font-style: normal;
@@ -556,7 +556,7 @@ body,
   grid-template-rows: repeat(4, 1fr);
   justify-items: center;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   padding: 0 14px;
   /* Тот же отступ снизу, что у чата: навигация не перекрывает нижний ряд */
   margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
@@ -566,10 +566,10 @@ body,
 
 .psychologist-matrix__cell {
   position: relative;
-  width: 100%;
-  height: 100%;
-  max-width: 116px;
-  max-height: 132px;
+  width: 105%;
+  height: 105%;
+  max-width: 120px;
+  max-height: 140px;
   padding: 0;
   border: none;
   background: none;
@@ -613,7 +613,7 @@ body,
 /* Матрица растворяется, пока выбранный портрет летит обратно на место */
 .psychologist-matrix--leaving {
   opacity: 0;
-  transition: opacity 0.3s ease-out;
+  transition: opacity 0.1s ease-out;
   pointer-events: none;
 }
 
