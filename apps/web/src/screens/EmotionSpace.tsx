@@ -501,7 +501,8 @@ export function EmotionSpace({ onNavStateChange, onRegisterMainReset, onRegister
       await pixiApp.init({
         width: containerEl.clientWidth,
         height: containerEl.clientHeight,
-        background: 0xf2efe9,
+        // Канвас прозрачный: фон (и тинт цвета эмоции) рисует CSS у .emotion-space.
+        backgroundAlpha: 0,
         antialias: true,
         resolution: Math.min(window.devicePixelRatio || 1, 2),
         autoDensity: true,
@@ -1352,7 +1353,10 @@ export function EmotionSpace({ onNavStateChange, onRegisterMainReset, onRegister
   }, [onRegisterToggleEmotionChat, handleToggleEmotionChat]);
 
   return (
-    <div className="emotion-space">
+    <div
+      className="emotion-space"
+      style={{ '--bg-tint': (heldEmotion ?? focusedEmotion)?.color } as React.CSSProperties}
+    >
       <div ref={containerRef} id="pixi-container" />
 
       {focusedId === null && heldId === null && (

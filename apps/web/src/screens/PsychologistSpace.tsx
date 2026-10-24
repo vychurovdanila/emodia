@@ -259,7 +259,14 @@ export function PsychologistSpace({ initialPsychologistId, onNavStateChange }: P
   const flyingId = flight?.psychologistId ?? null;
 
   return (
-    <div className="psychologist-space">
+    <div
+      className="psychologist-space"
+      style={
+        isMatrixOpen
+          ? undefined
+          : ({ '--bg-tint': psychologist.color } as CSSProperties)
+      }
+    >
       {isMatrixOpen ? (
         /* Матрица выбора психолога: 3 × 4, у каждого своё место; чат скрыт */
         <div
